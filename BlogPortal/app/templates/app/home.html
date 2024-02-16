@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Portal</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        /* Custom CSS styles */
+        body {
+            padding-top: 50px;
+        }
+        .container {
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <a class="navbar-brand" href="#">BLOG PORTAL</a>
+    </nav>
+
+    <div class="container mt-5">
+        <h2>Load Blogs of Specific Author</h2>
+        <div class="input-group mb-3">
+            <input type="text" id="authorId" class="form-control" placeholder="Enter Author ID">
+            <div class="input-group-append">
+                <button class="btn btn-primary load-btn" type="submit" data-action="loadBlogsByAuthor">Load Blogs</button>
+            </div>
+        </div>
+
+        <h2>Load Top Commented Blogs</h2>
+        <div class="input-group mb-3">
+            <input type="text" id="userIdCommentedBlogs" class="form-control" placeholder="Enter User ID">
+            <div class="input-group-append">
+                <button class="btn btn-primary load-btn" data-action="loadTopCommentedBlogs">Load Top Commented Blogs</button>
+            </div>
+        </div>
+
+        <h2>Load Top Liked/Disliked Blogs</h2>
+        <button class="btn btn-primary load-btn" data-action="loadTopLikedDislikedBlogs">Load Top Liked/Disliked Blogs</button>
+
+        <h2>Load Recent Liked Blogs</h2>
+        <div class="input-group mb-3">
+            <input type="text" id="userIdLikedBlogs" class="form-control" placeholder="Enter User ID">
+            <div class="input-group-append">
+                <button class="btn btn-primary load-btn" data-action="loadRecentLikedBlogs">Load Recent Liked Blogs</button>
+            </div>
+        </div>
+
+        <h2>Load Comment History for Specific Blog</h2>
+        <div class="input-group mb-3">
+            <input type="text" id="userIdSpecificBlog" class="form-control" placeholder="Enter User ID">
+            <input type="text" id="blogIdSpecificBlog" class="form-control" placeholder="Enter Blog ID">
+            <div class="input-group-append">
+                <button class="btn btn-primary load-btn" data-action="loadCommentHistoryForSpecificBlog">Load Comment History for Specific Blog</button>
+            </div>
+        </div>
+
+        <h2>Load Comment History for Author</h2>
+        <div class="input-group mb-3">
+            <input type="text" id="userIdAuthor" class="form-control" placeholder="Enter User ID">
+            <input type="text" id="authorIdAuthor" class="form-control" placeholder="Enter Author ID">
+            <div class="input-group-append">
+                <button class="btn btn-primary load-btn" data-action="loadCommentHistoryForAuthor">Load Comment History for Author</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="blogs-container" class="container mt-5"></div>
+    <div id="top-commented-blogs-container" class="container mt-5"></div>
+    <div id="top-liked-blogs-container" class="container mt-5"></div>
+    <div id="top-disliked-blogs-container" class="container mt-5"></div>
+    <div id="recent-liked-blogs-container" class="container mt-5"></div>
+    <div id="comment-history-container" class="container mt-5"></div>
+    <div id="author-comment-history-container" class="container mt-5"></div>
+
+    <script>
+        $(document).ready(function() {
+            // Define a mapping of action names to function names
+            var actionFunctionMap = {
+                'loadBlogsByAuthor': loadBlogsByAuthor,
+                'loadTopCommentedBlogs': loadTopCommentedBlogs,
+                'loadTopLikedDislikedBlogs': loadTopLikedDislikedBlogs,
+                'loadRecentLikedBlogs': loadRecentLikedBlogs,
+                'loadCommentHistoryForSpecificBlog': loadCommentHistoryForSpecificBlog,
+                'loadCommentHistoryForAuthor': loadCommentHistoryForAuthor
+            };
+            // Add click event handler to all buttons with class "load-btn"
+            $('.load-btn').click(function() {
+                var action = $(this).data('action');
+                var inputValue = $(this).closest('.input-group').find('input').val();
+                actionFunctionMap[action](inputValue);
+            });
+
+            function loadBlogsByAuthor(authorId) {
+                $.ajax({
+                    url: "{{ base_url }}" + '/app/blogs/' + authorId + '/',
+                    type: 'GET',
+                    success: function(response) {
+                        // Handle successful response
+                        $('#blogs-container').empty(); // Clear previous data
+                        response.blogs.forEach(function(blog) {
+                            var blogHtml = '<div class="blog">' +
+                                '<h3>' + "RESULT" + '</h3>' +
+                                '<h3>' + blog.name + '</h3>' +
+                                '<p>' + blog.content + '</p>' +
+                                '<p>Comments: ' + blog.comments_count + ', Likes: ' + blog.likes_count + ', Dislikes: ' + blog.dislikes_count + '</p>' +
+                                '</div>';
+                            $('#blogs-container').append(blogHtml); // Append blog HTML to container
+                        });
+                        document.getElementById('blogs-container').scrollIntoView({ behavior: 'smooth' });
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle error
+                        $('#blogs-container').html('<p>Error loading blogs. Error code: ' + error + '</p>'); // Display error message
+                        document.getElementById('blogs-container').scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            }
+        
+            // Script for loading top 5 commented blogs of a user
+            function loadTopCommentedBlogs(userId) {
+                $.ajax({
+                    url: "{{ base_url }}" + '/app/top-commented-blogs/' + userId + '/',
+                    type: 'GET',
+                    success: function(response) {
+                        // Handle successful response
+                        $('#top-commented-blogs-container').empty(); // Clear previous data
+                        response.top_commented_blogs.forEach(function(blog) {
+                            var blogHtml = '<div class="blog">' +
+                                '<h3>' + blog.name + '</h3>' +
+                                '<p>' + blog.content + '</p>' +
+                                '<p>Comments: ' + blog.comments_count + '</p>' +
+                                '</div>';
+                            $('#top-commented-blogs-container').append(blogHtml); // Append blog HTML to container
+                        });
+                        document.getElementById('top-commented-blogs-container').scrollIntoView({ behavior: 'smooth' });
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle error
+                        $('#top-commented-blogs-container').html('<p>Error loading blogs. Error code: ' + error + '</p>'); // Display error message
+                    }
+                });
+            }
+        
+            // Script for loading top 5 liked and disliked blogs
+            function loadTopLikedDislikedBlogs() {
+                $.ajax({
+                    url: "{{ base_url }}" + '/app/top-liked-disliked-blogs/',
+                    type: 'GET',
+                    success: function(response) {
+                        // Handle successful response
+                        $('#top-liked-blogs-container').empty(); // Clear previous data
+                        $('#top-disliked-blogs-container').empty(); // Clear previous data
+                        response.top_liked_blogs.forEach(function(blog) {
+                            var blogHtml = '<div class="blog">' +
+                                '<h3>' + blog.name + '</h3>' +
+                                '<p>' + blog.content + '</p>' +
+                                '<p>Likes: ' + blog.likes_count + '</p>' +
+                                '</div>';
+                            $('#top-liked-blogs-container').append(blogHtml); // Append blog HTML to container
+                        });
+                        response.top_disliked_blogs.forEach(function(blog) {
+                            var blogHtml = '<div class="blog">' +
+                                '<h3>' + blog.name + '</h3>' +
+                                '<p>' + blog.content + '</p>' +
+                                '<p>Dislikes: ' + blog.dislikes_count + '</p>' +
+                                '</div>';
+                            $('#top-disliked-blogs-container').append(blogHtml); // Append blog HTML to container
+                        });
+                        document.getElementById('top-liked-blogs-container').scrollIntoView({ behavior: 'smooth' });
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle error
+                        $('#top-liked-blogs-container').html('<p>Error loading blogs. Error code: ' + error + '</p>'); // Display error message
+                    }
+                });
+            }
+        
+            // Script for loading recent 5 liked blogs of a user
+            function loadRecentLikedBlogs(userId) {
+                $.ajax({
+                    url: "{{ base_url }}" + '/app/my-recent-liked-blogs/' + userId + '/',
+                    type: 'GET',
+                    success: function(response) {
+                        // Handle successful response
+                        $('#recent-liked-blogs-container').empty(); // Clear previous data
+                        response.recent_liked_blogs.forEach(function(blog) {
+                            var blogHtml = '<div class="blog">' +
+                                '<h3>' + blog.name + '</h3>' +
+                                '<p>' + blog.content + '</p>' +
+                                '<p>Likes: ' + blog.likes_count + '</p>' +
+                                '</div>';
+                            $('#recent-liked-blogs-container').append(blogHtml); // Append blog HTML to container
+                        });
+                        document.getElementById('recent-liked-blogs-container').scrollIntoView({ behavior: 'smooth' });
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle error
+                        $('#recent-liked-blogs-container').html('<p>Error loading blogs. Error code: ' + error + '</p>'); // Display error message
+                    }
+                });
+            }
+        
+            // Script for loading comment history for specific blog of a user
+            function loadCommentHistoryForSpecificBlog(userId, blogId) {
+                $.ajax({
+                    url: "{{ base_url }}" + '/app/my-comment-history-for-specific-blog/' + userId + '/' + blogId + '/',
+                    type: 'GET',
+                    success: function(response) {
+                        // Handle successful response
+                        $('#comment-history-container').empty(); // Clear previous data
+                        response.comment_history.forEach(function(comment) {
+                            var commentHtml = '<div class="comment">' +
+                                '<p>' + comment.comment_text + '</p>' +
+                                '</div>';
+                            $('#comment-history-container').append(commentHtml); // Append comment HTML to container
+                        });
+                        document.getElementById('comment-history-container').scrollIntoView({ behavior: 'smooth' });
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle error
+                        $('#comment-history-container').html('<p>Error loading blogs. Error code: ' + error + '</p>'); // Display error message
+                    }
+                });
+            }
+        
+            // Script for loading comment history for a particular author of a user
+            function loadCommentHistoryForAuthor(userId, authorId) {
+                $.ajax({
+                    url: "{{ base_url }}" + '/app/my-comment-history-for-author/' + userId + '/' + authorId + '/',
+                    type: 'GET',
+                    success: function(response) {
+                        // Handle successful response
+                        $('#author-comment-history-container').empty(); // Clear previous data
+                        response.comment_history.forEach(function(comment) {
+                            var commentHtml = '<div class="comment">' +
+                                '<p>' + comment.comment_text + '</p>' +
+                                '</div>';
+                            $('#author-comment-history-container').append(commentHtml); // Append comment HTML to container
+                        });
+                        document.getElementById('author-comment-history-container').scrollIntoView({ behavior: 'smooth' });
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle error
+                        $('#author-comment-history-container').html('<p>Error loading blogs. Error code: ' + error + '</p>'); // Display error message
+                    }
+                });
+            }
+
+        });
+    </script>
+
+</body>
+</html>
